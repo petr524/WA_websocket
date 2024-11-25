@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Document</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 80%;
+      max-width: 800px;
+      height: 80%;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #editor {
+      flex-grow: 1;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      overflow-y: auto;
+      font-family: "Courier New", Courier, monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      outline: none;
+    }
+    #status,
+    #user-list {
+      padding: 10px;
+      font-size: 14px;
+      border-top: 1px solid #ddd;
+    }
+    #status {
+      background-color: #f8f9fa;
+    }
+    .cursor {
+      position: absolute;
+      width: 2px;
+      height: 20px;
+      background-color: red;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="editor" contenteditable="true"></div>
+    <div id="status">Stav připojení: Neznámý</div>
+    <div id="user-list">Uživatelé: </div>
+  </div>
+
+  <script>
+    const ws = new WebSocket("ws://3.127.66.88:8080");
+    const editor = document.getElementById('editor');
+    const statusDiv = document.getElementById('status');
+    const userListDiv = document.getElementById('user-list');
+    const cursorElement = document.createElement('div');
+    cursorElement.classList.add('cursor');
+    document.body.appendChild(cursorElement);
+
+    ws.onopen = () => {
+      console.log("Připojeno k serveru");
+      statusDiv.textContent = "Stav připojení: Aktivní";
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      switch (data.type) {
+        case "init":
+          editor.innerHTML = data.content;
+          updateUserList(data.users);
+          break;
+        case "textUpdate":
+          editor.innerHTML = data.content;
+          break;
+        case "cursorUpdate":
+          updateCursor(data.cursor);
+          break;
+        case "userDisconnect":
+          updateUserList(data.users);
+          break;
+      }
+    };
+
+    editor.addEventListener("input", () => {
+      const content = editor.innerHTML;
+      ws.send(JSON.stringify({ type: "textUpdate", content }));
+    });
+
+    editor.addEventListener("mousemove", (e) => {
+      const cursor = { x: e.clientX, y: e.clientY };
+      ws.send(JSON.stringify({ type: "cursorMove", cursor }));
+    });
+
+    function updateCursor(cursor) {
+      cursorElement.style.left = `${cursor.x}px`;
+      cursorElement.style.top = `${cursor.y}px`;
+    }
+
+    function updateUserList(users) {
+      userListDiv.textContent = "Uživatelé: " + users.join(", ");
+    }
+
+    ws.onclose = () => {
+      console.log("Spojení se serverem bylo přerušeno.");
+      statusDiv.textContent = "Stav připojení: Neaktivní";
+    };
+  </script>
+</body>
+</html>
