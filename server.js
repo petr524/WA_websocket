@@ -9,7 +9,7 @@ const wss = new WebSocket.Server({ server });
 // Inicializace proměnných
 let documentContent = ""; // Obsah sdíleného dokumentu
 const clients = {}; // Sledování připojených klientů a jejich kurzorů
-const userNames = ["BigBoy", "LittlePookie", "CoolCat", "SmartCookie", "FastFingers"];
+const userNames = ["PixelPioneer", "CodeMaster", "WebWhiz", "ByteBeast", "DataDynamo"]; // Nový seznam jmen
 let userIndex = 0; // Pro přiřazení unikátního jména
 
 // Servírování statických souborů
@@ -18,7 +18,7 @@ app.use(express.static(__dirname));
 // WebSocket logika
 wss.on("connection", (ws) => {
   const userId = Date.now(); // Unikátní identifikátor klienta
-  const userName = userNames[userIndex % userNames.length]; // Přiřadit jméno z předdefinovaného seznamu
+  const userName = userNames[userIndex % userNames.length]; // Přiřadit jméno z nového seznamu
   userIndex++;
 
   console.log(`Uživatel připojen: ${userName}`);
