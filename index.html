@@ -14,10 +14,12 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      overflow: hidden;
     }
+
     .container {
       width: 80%;
-      max-width: 800px;
+      max-width: 900px;
       height: 80%;
       background-color: #fff;
       border-radius: 8px;
@@ -26,6 +28,7 @@
       flex-direction: column;
       overflow: hidden;
     }
+
     #editor {
       flex-grow: 1;
       border: 1px solid #ccc;
@@ -36,16 +39,19 @@
       white-space: pre-wrap;
       word-wrap: break-word;
       outline: none;
+      position: relative;
     }
-    #status,
-    #user-list {
+
+    #status, #user-list {
       padding: 10px;
       font-size: 14px;
       border-top: 1px solid #ddd;
     }
+
     #status {
       background-color: #f8f9fa;
     }
+
     .cursor {
       position: absolute;
       width: 2px;
@@ -53,6 +59,13 @@
       background-color: red;
       pointer-events: none;
     }
+
+    #user-list {
+      background-color: #fafafa;
+      font-size: 12px;
+      color: #555;
+    }
+
   </style>
 </head>
 <body>
@@ -101,7 +114,7 @@
     });
 
     editor.addEventListener("mousemove", (e) => {
-      const cursor = { x: e.clientX, y: e.clientY };
+      const cursor = { x: e.clientX - editor.offsetLeft, y: e.clientY - editor.offsetTop };
       ws.send(JSON.stringify({ type: "cursorMove", cursor }));
     });
 
