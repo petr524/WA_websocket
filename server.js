@@ -9,7 +9,7 @@ const wss = new WebSocket.Server({ server });
 // Inicializace proměnných
 let documentContent = ""; // Obsah sdíleného dokumentu
 const clients = {}; // Sledování připojených klientů a jejich kurzorů
-const userNames = ["PixelPioneer", "CodeMaster", "WebWhiz", "ByteBeast", "DataDynamo"]; // Nový seznam jmen
+const userNames = ["PixelPioneer", "CodeMaster", "WebWhiz", "ByteBeast", "DataDynamo"]; // Seznam jmen
 let userIndex = 0; // Pro přiřazení unikátního jména
 
 // Servírování statických souborů
@@ -29,7 +29,7 @@ wss.on("connection", (ws) => {
     JSON.stringify({
       type: "init",
       content: documentContent,
-      users: Object.values(clients).map(client => client.userName),
+      users: Object.values(clients).map((client) => client.userName),
     })
   );
 
@@ -40,12 +40,16 @@ wss.on("connection", (ws) => {
 
       if (data.type === "textUpdate") {
         // Aktualizace obsahu dokumentu
-        documentContent = data.content;
-        broadcast({ type: "textUpdate", content: documentContent }, ws);
+        if (typeof data.content === "string") {
+          documentContent = data.content;
+          broadcast({ type: "textUpdate", content: documentContent }, ws);
+        }
       } else if (data.type === "cursorMove") {
         // Aktualizace pozice kurzoru
-        clients[userId].cursor = data.cursor;
-        broadcast({ type: "cursorUpdate", userId, cursor: data.cursor }, ws);
+        if (data.cursor && typeof data.cursor.x === "number" && typeof data.cursor.y === "number") {
+          clients[userId].cursor = data.cursor;
+          broadcast({ type: "cursorUpdate", userId, cursor: data.cursor }, ws);
+        }
       }
     } catch (err) {
       console.error("Chyba při zpracování zprávy:", err);
@@ -58,13 +62,22 @@ wss.on("connection", (ws) => {
     delete clients[userId];
     broadcast({ type: "userDisconnect", userId });
   });
+
+  // Ošetření chyb WebSocket
+  ws.on("error", (err) => {
+    console.error(`Chyba WebSocket u uživatele ${userName}:`, err);
+  });
 });
 
 // Funkce pro rozeslání zpráv všem klientům kromě odesílatele
 function broadcast(data, excludeWs) {
   wss.clients.forEach((client) => {
     if (client !== excludeWs && client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
+      try {
+        client.send(JSON.stringify(data));
+      } catch (err) {
+        console.error("Chyba při rozesílání zprávy:", err);
+      }
     }
   });
 }
