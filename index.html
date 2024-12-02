@@ -77,20 +77,20 @@
 
   <script>
     const ws = new WebSocket("ws://3.127.66.88:8080");
-    const editor = document.getElementById('editor');
-    const statusDiv = document.getElementById('status');
-    const userListDiv = document.getElementById('user-list');
-    const cursorElement = document.createElement('div');
-    cursorElement.classList.add('cursor');
-    document.body.appendChild(cursorElement);
+    const editor = document.getElementById("editor");
+    const statusDiv = document.getElementById("status");
+    const userListDiv = document.getElementById("user-list");
 
     ws.onopen = () => {
-      console.log("Připojeno k serveru");
+      console.log("Připojeno k serveru.");
       statusDiv.textContent = "Stav připojení: Aktivní";
+      statusDiv.style.color = "green";
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log("Přijatá zpráva:", data);
+
       switch (data.type) {
         case "init":
           editor.innerHTML = data.content;
@@ -100,36 +100,39 @@
           editor.innerHTML = data.content;
           break;
         case "cursorUpdate":
-          updateCursor(data.cursor);
+          // Můžeš implementovat aktualizaci pozice kurzoru zde.
           break;
         case "userDisconnect":
           updateUserList(data.users);
           break;
+        default:
+          console.warn("Neznámý typ zprávy:", data.type);
       }
     };
 
     editor.addEventListener("input", () => {
-      const content = editor.innerHTML;
-      ws.send(JSON.stringify({ type: "textUpdate", content }));
+      if (ws.readyState === WebSocket.OPEN) {
+        const content = editor.innerHTML;
+        ws.send(JSON.stringify({ type: "textUpdate", content }));
+      } else {
+        console.warn("WebSocket není otevřený.");
+      }
     });
-
-    editor.addEventListener("mousemove", (e) => {
-      const cursor = { x: e.clientX - editor.offsetLeft, y: e.clientY - editor.offsetTop };
-      ws.send(JSON.stringify({ type: "cursorMove", cursor }));
-    });
-
-    function updateCursor(cursor) {
-      cursorElement.style.left = `${cursor.x}px`;
-      cursorElement.style.top = `${cursor.y}px`;
-    }
 
     function updateUserList(users) {
-      userListDiv.textContent = "Uživatelé: " + users.join(", ");
+      userListDiv.textContent = "Uživatelé: " + (users ? users.join(", ") : "Žádní uživatelé");
     }
 
     ws.onclose = () => {
       console.log("Spojení se serverem bylo přerušeno.");
       statusDiv.textContent = "Stav připojení: Neaktivní";
+      statusDiv.style.color = "red";
+    };
+
+    ws.onerror = (error) => {
+      console.error("Chyba WebSocket:", error);
+      statusDiv.textContent = "Stav připojení: Chyba";
+      statusDiv.style.color = "orange";
     };
   </script>
 </body>
